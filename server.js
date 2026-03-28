@@ -1,4 +1,6 @@
-require("dotenv").config();
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 const express = require("express");
 const cors = require("cors");
@@ -16,7 +18,7 @@ app.use(express.json());
 
 // TEST ROUTE
 app.get("/", (req, res) => {
-  res.send("POS API Running...");
+  res.send("POS API Runninga...");
 });
 
 // ROUTES
@@ -31,9 +33,5 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// DB CONNECT
-pool.connect()
-  .then(() => console.log("✅ Connected to Supabase DB"))
-  .catch(err => console.error("❌ DB Connection Error:", err));
 
 console.log("DB URL loaded");
