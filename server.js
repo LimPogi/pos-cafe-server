@@ -33,5 +33,8 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
+process.env.PORT
+process.env.DATABASE_URL
+process.env.SECRET_KEY
 
 console.log("DB URL loaded");
