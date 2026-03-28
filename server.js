@@ -1,6 +1,16 @@
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
+const cors = require("cors");
+
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://https://pos-cafe-client.vercel.app/"
+  ],
+  credentials: true
+}));
+
 
 const express = require("express");
 const cors = require("cors");
