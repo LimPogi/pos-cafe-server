@@ -45,19 +45,28 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
+  console.log("👉 LOGIN REQUEST RECEIVED:", email);
+
   try {
     const userResult = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
+    console.log("👉 DB RESULT:", userResult.rows);
+
     if (userResult.rows.length === 0) {
+      console.log("❌ USER NOT FOUND");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const user = userResult.rows[0];
 
+    console.log("👉 USER FOUND:", user.email);
+
     const validPassword = await bcrypt.compare(password, user.password);
+
+    console.log("👉 PASSWORD MATCH:", validPassword);
 
     if (!validPassword) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -75,9 +84,10 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("❌ LOGIN ERROR:", err);
+    res.status(500).json({ message: err.message });
   }
 });
+
 
 module.exports = router;
