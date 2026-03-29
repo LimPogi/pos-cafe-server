@@ -3,49 +3,68 @@ const router = express.Router();
 const pool = require("../config/db");
 const auth = require("../middleware/authMiddleware");
 
-// 🔐 CREATE ORDER
-router.post("/", auth, async (req, res) => {
-  try {
-    const { items, total, payment, change } = req.body;
+router.post("/", async (req, res) => {
+  const { items, total } = req.body;
 
-    const result = await pool.query(
-      `INSERT INTO orders (items, total, payment, change)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [JSON.stringify(items), total, payment, change]
+  // ✅ VALIDATION
+  if (!items || items.length === 0) {
+    return res.status(400).json({ error: "Cart is empty" });
+  }
+
+  if (!total || total <= 0) {
+    return res.status(400).json({ error: "Invalid total" });
+  }
+
+  try {
+    const order = await pool.query(
+      "INSERT INTO orders (total) VALUES ($1) RETURNING *",
+      [total]
     );
 
-    res.json({
-      msg: "Order created",
-      order: result.rows[0],
-    });
+    const orderId = order.rows[0].id;
+
+    for (let item of items) {
+      if (!item.name || !item.price || !item.qty) continue;
+
+      await pool.query(
+        `INSERT INTO order_items 
+        (order_id, name, price, qty) 
+        VALUES ($1, $2, $3, $4)`,
+        [orderId, item.name, item.price, item.qty]
+      );
+    }
+
+    res.json({ message: "Order saved", orderId });
   } catch (err) {
-    res.status(500).json({ msg: "Server error" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// 🔐 GET ORDERS
-router.get("/", auth, async (req, res) => {
+// 📊 GET ALL ORDERS
+router.get("/", async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM orders ORDER BY id DESC"
+      "SELECT * FROM orders ORDER BY created_at DESC"
     );
 
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ msg: "Error fetching orders" });
+    res.status(500).json({ error: "Failed to fetch orders" });
   }
 });
 
-router.post("/checkout", async (req, res) => {
-  const { items, subtotal, discount, tax, total } = req.body;
+// 📈 TOTAL SALES
+router.get("/summary", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT SUM(total) as total_sales FROM orders"
+    );
 
-  await pool.query(
-    "INSERT INTO orders (items, subtotal, discount, tax, total) VALUES ($1,$2,$3,$4,$5)",
-    [JSON.stringify(items), subtotal, discount, tax, total]
-  );
-
-  res.json({ message: "Order saved" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Summary error" });
+  }
 });
 
 module.exports = router;
