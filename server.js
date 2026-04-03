@@ -1,19 +1,10 @@
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
-const cors = require("cors");
-
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://https://pos-cafe-client.vercel.app/"
-  ],
-  credentials: true
-}));
-
 
 const express = require("express");
 const cors = require("cors");
+
 const pool = require("./config/db");
 
 const authRoutes = require("./routes/auth");
@@ -23,12 +14,22 @@ const dashboardRoutes = require("./routes/dashboard");
 
 const app = express();
 
-app.use(cors());
+// ✅ CORS CONFIG (FIXED)
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://pos-cafe-client.vercel.app"
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // TEST ROUTE
 app.get("/", (req, res) => {
-  res.send("POS API Runninga...");
+  res.send("POS API Running...");
 });
 
 // ROUTES
@@ -37,14 +38,12 @@ app.use("/api/orders", orderRoutes);
 app.use("/api", productsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
+// PORT
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-process.env.PORT
-process.env.DATABASE_URL
-process.env.SECRET_KEY
-
-console.log("DB URL loaded");
+// DEBUG LOGS (optional)
+console.log("DB URL loaded:", !!process.env.DATABASE_URL);
