@@ -31,6 +31,8 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://pos-cafe-client.vercel.app",
+      "https://pos-cafe-client-djlwkssh3-limpogis-projects.vercel.app",
+
     ],
     credentials: true,
   })
