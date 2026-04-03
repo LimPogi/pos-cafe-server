@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
+
 const pool = require("../config/db");
 const verifyToken = require("../middleware/authMiddleware");
-const express = require("express");
 
 
 // 📊 TOTAL SALES
@@ -13,6 +13,7 @@ router.get("/total-sales", verifyToken, async (req, res) => {
     totalSales: result.rows[0].sum || 0,
   });
 });
+
 
 // 📅 TODAY SALES
 router.get("/today-sales", verifyToken, async (req, res) => {
@@ -27,6 +28,7 @@ router.get("/today-sales", verifyToken, async (req, res) => {
   });
 });
 
+
 // 📦 ALL ORDERS
 router.get("/orders", verifyToken, async (req, res) => {
   const result = await pool.query(
@@ -35,6 +37,7 @@ router.get("/orders", verifyToken, async (req, res) => {
 
   res.json(result.rows);
 });
+
 
 // 📅 WEEK SALES
 router.get("/week-sales", verifyToken, async (req, res) => {
@@ -49,6 +52,7 @@ router.get("/week-sales", verifyToken, async (req, res) => {
   });
 });
 
+
 // 📅 MONTH SALES
 router.get("/month-sales", verifyToken, async (req, res) => {
   const result = await pool.query(`
@@ -62,7 +66,8 @@ router.get("/month-sales", verifyToken, async (req, res) => {
   });
 });
 
-// 📈 DAILY SALES (NEW - ADD THIS)
+
+// 📈 DAILY SALES
 router.get("/daily-sales", verifyToken, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -81,6 +86,8 @@ router.get("/daily-sales", verifyToken, async (req, res) => {
   }
 });
 
+
+// 📊 SUMMARY
 router.get("/sales/summary", async (req, res) => {
   const result = await pool.query(`
     SELECT 
@@ -91,5 +98,6 @@ router.get("/sales/summary", async (req, res) => {
 
   res.json(result.rows[0]);
 });
+
 
 module.exports = router;
