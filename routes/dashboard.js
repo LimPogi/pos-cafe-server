@@ -79,4 +79,15 @@ router.get("/daily-sales", verifyToken, async (req, res) => {
   }
 });
 
+app.get("/sales/summary", async (req, res) => {
+  const result = await pool.query(`
+    SELECT 
+      COUNT(*) as total_orders,
+      SUM(total) as total_sales
+    FROM orders
+  `);
+
+  res.json(result.rows[0]);
+});
+
 module.exports = router;

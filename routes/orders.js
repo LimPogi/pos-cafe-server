@@ -1,47 +1,59 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../config/db");
-const auth = require("../middleware/authMiddleware");
 
+// 🧾 CREATE ORDER (CHECKOUT)
 router.post("/", async (req, res) => {
-  const { items, total } = req.body;
+  const { user_id, items, total, payment, change } = req.body;
 
-  // ✅ VALIDATION
   if (!items || items.length === 0) {
     return res.status(400).json({ error: "Cart is empty" });
   }
 
-  if (!total || total <= 0) {
-    return res.status(400).json({ error: "Invalid total" });
-  }
-
   try {
-    const order = await pool.query(
-      "INSERT INTO orders (total) VALUES ($1) RETURNING *",
-      [total]
+    // 1. Insert order
+    const orderResult = await pool.query(
+      `INSERT INTO orders (user_id, total, payment, change)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [user_id || null, total, payment || 0, change || 0]
     );
 
-    const orderId = order.rows[0].id;
+    const orderId = orderResult.rows[0].id;
 
+    // 2. Insert items + update stock
     for (let item of items) {
       if (!item.name || !item.price || !item.qty) continue;
 
+      // insert order item
       await pool.query(
-        `INSERT INTO order_items 
-        (order_id, name, price, qty) 
-        VALUES ($1, $2, $3, $4)`,
+        `INSERT INTO order_items (order_id, product_name, price, qty)
+         VALUES ($1, $2, $3, $4)`,
         [orderId, item.name, item.price, item.qty]
+      );
+
+      // 🔥 UPDATE STOCK (IMPORTANT FIX)
+      await pool.query(
+        `UPDATE products
+         SET stock = stock - $1
+         WHERE name = $2`,
+        [item.qty, item.name]
       );
     }
 
-    res.json({ message: "Order saved", orderId });
+    res.json({
+      message: "Order created successfully",
+      orderId,
+    });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    console.error("ORDER ERROR:", err);
+    res.status(500).json({ error: "Order failed" });
   }
 });
 
-// 📊 GET ALL ORDERS
+
+// 📦 GET ALL ORDERS
 router.get("/", async (req, res) => {
   try {
     const result = await pool.query(
@@ -54,15 +66,20 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 📈 TOTAL SALES
+
+// 📊 SALES SUMMARY (DASHBOARD)
 router.get("/summary", async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT SUM(total) as total_sales FROM orders"
-    );
+    const result = await pool.query(`
+      SELECT 
+        COUNT(*) as total_orders,
+        COALESCE(SUM(total), 0) as total_sales
+      FROM orders
+    `);
 
     res.json(result.rows[0]);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Summary error" });
   }
 });
