@@ -14,7 +14,7 @@ const pool = require("./config/db");
 
 // Routes
 const authRoutes = require("./routes/auth");
-const orderRoutes = require("./routes/orders"); // ✅ correct (plural)
+const orderRoutes = require("./routes/orders");
 const productsRoutes = require("./routes/product");
 const dashboardRoutes = require("./routes/dashboard");
 
@@ -46,11 +46,19 @@ app.get("/", (req, res) => {
 });
 
 // ======================
+// DEBUG (TEMP ONLY)
+// ======================
+console.log("authRoutes:", typeof authRoutes);
+console.log("orderRoutes:", typeof orderRoutes);
+console.log("productsRoutes:", typeof productsRoutes);
+console.log("dashboardRoutes:", typeof dashboardRoutes);
+
+// ======================
 // ROUTES
 // ======================
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api/products", productsRoutes);
+app.use("/api/products", productsRoutes); // ✅ FIXED (plural consistent)
 app.use("/api/dashboard", dashboardRoutes);
 
 // ======================

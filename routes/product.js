@@ -3,38 +3,33 @@ const router = express.Router();
 const pool = require("../config/db");
 const verifyToken = require("../middleware/authMiddleware");
 
-// 🔐 GET ALL PRODUCTS (PROTECTED)
+// GET ALL
 router.get("/", verifyToken, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM products");
     res.json(result.rows);
   } catch (err) {
-    console.error("GET PRODUCTS ERROR:", err.message);
-    res.status(500).json({ msg: "Error fetching products" });
+    res.status(500).json({ msg: "Error" });
   }
 });
 
-// 🔐 ADD PRODUCT
+// ADD
 router.post("/", verifyToken, async (req, res) => {
   const { name, price, stock } = req.body;
 
-  if (!name || price == null || stock == null) {
-    return res.status(400).json({ msg: "Missing fields" });
-  }
-
   try {
     const result = await pool.query(
-      "INSERT INTO products (name, price, stock) VALUES ($1, $2, $3) RETURNING *",
+      "INSERT INTO products (name, price, stock) VALUES ($1,$2,$3) RETURNING *",
       [name, price, stock]
     );
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ msg: "Error adding product" });
+    res.status(500).json({ msg: "Error" });
   }
 });
 
-// 🔐 UPDATE PRODUCT
+// UPDATE
 router.put("/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const { name, price, stock } = req.body;
@@ -45,33 +40,23 @@ router.put("/:id", verifyToken, async (req, res) => {
       [name, price, stock, id]
     );
 
-    if (!result.rows.length) {
-      return res.status(404).json({ msg: "Product not found" });
-    }
-
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ msg: "Error updating product" });
+    res.status(500).json({ msg: "Error" });
   }
 });
 
-// 🔐 DELETE PRODUCT
+// DELETE
 router.delete("/:id", verifyToken, async (req, res) => {
-  const { id } = req.params;
-
   try {
     const result = await pool.query(
       "DELETE FROM products WHERE id=$1 RETURNING *",
-      [id]
+      [req.params.id]
     );
-
-    if (!result.rows.length) {
-      return res.status(404).json({ msg: "Product not found" });
-    }
 
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ msg: "Error deleting product" });
+    res.status(500).json({ msg: "Error" });
   }
 });
 

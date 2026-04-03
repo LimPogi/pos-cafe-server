@@ -5,26 +5,21 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const pool = require("../config/db");
 
-
+// LOGIN
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const userResult = await pool.query(
+    const result = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
-    if (userResult.rows.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const user = userResult.rows[0];
-
-    // SAFE CHECK (prevents crash)
-    if (!user.password) {
-      return res.status(500).json({ message: "User password missing in DB" });
-    }
+    const user = result.rows[0];
 
     const validPassword = await bcrypt.compare(password, user.password);
 
@@ -32,10 +27,8 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // SAFE JWT (prevents crash if missing env)
     if (!process.env.JWT_SECRET) {
-      console.error("JWT_SECRET missing in environment");
-      return res.status(500).json({ message: "Server misconfigured" });
+      return res.status(500).json({ message: "JWT not configured" });
     }
 
     const token = jwt.sign(
@@ -52,9 +45,10 @@ router.post("/login", async (req, res) => {
         role: user.role,
       },
     });
-
   } catch (err) {
-    console.error("❌ LOGIN ERROR:", err);
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+module.exports = router;
