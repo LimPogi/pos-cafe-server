@@ -14,7 +14,7 @@ const pool = require("./config/db");
 
 // Routes
 const authRoutes = require("./routes/auth");
-const orderRoutes = require("./routes/order"); // ✅ FIXED (was orders)
+const orderRoutes = require("./routes/orders"); // ✅ correct (plural)
 const productsRoutes = require("./routes/product");
 const dashboardRoutes = require("./routes/dashboard");
 
@@ -39,14 +39,14 @@ app.use(
 app.use(express.json());
 
 // ======================
-// TEST ROUTE
+// HEALTH CHECK
 // ======================
 app.get("/", (req, res) => {
-  res.send("POS API Running...");
+  res.send("🚀 POS API Running...");
 });
 
 // ======================
-// API ROUTES
+// ROUTES
 // ======================
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
@@ -54,21 +54,21 @@ app.use("/api/products", productsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 // ======================
-// ANALYTICS ROUTES
+// SALES ANALYTICS
 // ======================
-
-// 📊 Sales Analytics
 app.get("/api/sales/analytics", async (req, res) => {
   try {
     const daily = await pool.query(`
-      SELECT DATE(created_at) as date, SUM(total) as total
+      SELECT DATE(created_at) AS date, SUM(total) AS total
       FROM orders
       GROUP BY DATE(created_at)
       ORDER BY date DESC
     `);
 
     const summary = await pool.query(`
-      SELECT COUNT(*) as orders, COALESCE(SUM(total), 0) as revenue
+      SELECT 
+        COUNT(*) AS orders,
+        COALESCE(SUM(total), 0) AS revenue
       FROM orders
     `);
 
@@ -78,11 +78,13 @@ app.get("/api/sales/analytics", async (req, res) => {
     });
   } catch (err) {
     console.error("ANALYTICS ERROR:", err.message);
-    res.status(500).json({ error: "Analytics error" });
+    res.status(500).json({ error: "Analytics failed" });
   }
 });
 
-// 📦 Low Stock Products
+// ======================
+// LOW STOCK PRODUCTS
+// ======================
 app.get("/api/products/low-stock", async (req, res) => {
   try {
     const result = await pool.query(`
