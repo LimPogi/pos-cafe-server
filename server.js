@@ -6,11 +6,12 @@ const express = require("express");
 const cors = require("cors");
 
 const pool = require("./config/db");
-
+const dashboardRoutes = require("./routes/dashboard");
 const authRoutes = require("./routes/auth");
 const orderRoutes = require("./routes/orders");
 const productsRoutes = require("./routes/product");
 const dashboardRoutes = require("./routes/dashboard");
+app.use("/api", dashboardRoutes);
 
 const app = express();
 

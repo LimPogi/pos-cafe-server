@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../config/db");
 const verifyToken = require("../middleware/authMiddleware");
+const express = require("express");
+
 
 // 📊 TOTAL SALES
 router.get("/total-sales", verifyToken, async (req, res) => {
@@ -79,7 +81,7 @@ router.get("/daily-sales", verifyToken, async (req, res) => {
   }
 });
 
-app.get("/sales/summary", async (req, res) => {
+router.get("/sales/summary", async (req, res) => {
   const result = await pool.query(`
     SELECT 
       COUNT(*) as total_orders,
