@@ -5,16 +5,18 @@ if (process.env.NODE_ENV !== "production") {
 const express = require("express");
 const cors = require("cors");
 
+const app = express(); // ✅ MUST BE FIRST
+
 const pool = require("./config/db");
 const authRoutes = require("./routes/auth");
 const orderRoutes = require("./routes/orders");
 const productsRoutes = require("./routes/product");
 const dashboardRoutes = require("./routes/dashboard");
-app.use("/api", dashboardRoutes);
 
-const app = express();
 
-// ✅ CORS CONFIG (FIXED)
+// ======================
+// MIDDLEWARE
+// ======================
 app.use(
   cors({
     origin: [
@@ -27,28 +29,28 @@ app.use(
 
 app.use(express.json());
 
+
+// ======================
 // TEST ROUTE
+// ======================
 app.get("/", (req, res) => {
   res.send("POS API Running...");
 });
 
+
+// ======================
 // ROUTES
+// ======================
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api", productsRoutes);
+app.use("/api/products", productsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
-// PORT
-const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-// DEBUG LOGS (optional)
-console.log("DB URL loaded:", !!process.env.DATABASE_URL);
-
-app.get("/sales/analytics", async (req, res) => {
+// ======================
+// EXTRA ANALYTICS ROUTES
+// ======================
+app.get("/api/sales/analytics", async (req, res) => {
   const daily = await pool.query(`
     SELECT DATE(created_at) as date, SUM(total) as total
     FROM orders
@@ -63,11 +65,11 @@ app.get("/sales/analytics", async (req, res) => {
 
   res.json({
     daily: daily.rows,
-    summary: total.rows[0]
+    summary: total.rows[0],
   });
 });
 
-app.get("/products/low-stock", async (req, res) => {
+app.get("/api/products/low-stock", async (req, res) => {
   const result = await pool.query(`
     SELECT * FROM products
     WHERE stock <= 5
@@ -75,3 +77,15 @@ app.get("/products/low-stock", async (req, res) => {
 
   res.json(result.rows);
 });
+
+
+// ======================
+// SERVER START
+// ======================
+const PORT = process.env.PORT || 5001;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+console.log("DB URL loaded:", !!process.env.DATABASE_URL);
