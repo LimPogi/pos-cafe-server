@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs"); // ✅ FIXED
+const bcrypt = require("bcryptjs");
 const pool = require("../config/db");
 
 
 // ==========================
-// 🧾 REGISTER (MISSING BEFORE)
+// 🧾 REGISTER
 // ==========================
 router.post("/register", async (req, res) => {
   const { email, password, role } = req.body;
@@ -15,8 +15,8 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING *",
-      [email, hashedPassword, role]
+      "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id, email, role",
+      [email, hashedPassword, role || "cashier"]
     );
 
     const user = result.rows[0];
@@ -30,12 +30,17 @@ router.post("/register", async (req, res) => {
     res.json({
       message: "User registered successfully",
       token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
     });
 
   } catch (err) {
-  console.error(err);
-  res.status(500).json({ message: err.message });
-}
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
 });
 
 
@@ -45,44 +50,38 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("👉 LOGIN REQUEST RECEIVED:", email);
-
   try {
     const userResult = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
-    console.log("👉 DB RESULT:", userResult.rows);
-
     if (userResult.rows.length === 0) {
-      console.log("❌ USER NOT FOUND");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const user = userResult.rows[0];
 
-    console.log("👉 USER FOUND:", user.email);
-
     const validPassword = await bcrypt.compare(password, user.password);
-
-    console.log("👉 PASSWORD MATCH:", validPassword);
 
     if (!validPassword) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    console.log("JWT SECRET:", process.env.JWT_SECRET); // ✅ add this line
-
     const token = jwt.sign(
-    { id: user.id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
     );
 
+    // ✅ FIXED RESPONSE FORMAT
     res.json({
       token,
-      role: user.role,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
     });
 
   } catch (err) {
@@ -90,6 +89,5 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
 
 module.exports = router;
